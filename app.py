@@ -1,57 +1,23 @@
-from flask import Flask, request
-import uuid
-from db import items
+from flask import Flask
+from resources.item import blp as ItemBluePrint
+from flask_smorest import Api 
+
 
 app = Flask(__name__)
 
 
+app.config["PROPAGATE_EXCEPTIONS"] = True 
+app.config["API_TITLE"] = "Items Rest API"
+app.config["API_VERSION"] = "v1"
+app.config["OPENAPI_VERSION"] = "3.0.3"
+app.config["OPENAPI_URL_PREFIX"] = "/"
+app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger-ui"
+app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 
 
 
-@app.get('/items')     
-def get_items():
-    return {"items": items}
-
-@app.get('/item')     
-def get_item():
-    id = request.args.get('id')
-    try:
-        return items[id]
-    except KeyError:
-        return {'message': "Record doesn't exist"}, 404
-
-@app.post('/item')
-def add_item():
-    request_data = request.get_json()
-    if "name" not in request_data or "price" not in request_data:
-        return {"message":"'name' and 'price' must be included in body"}, 400
-    items[uuid.uuid4().hex] = request_data
-    return {"message": "Item added succesfully"}, 201
+api = Api(app)
+api.register_blueprint(ItemBluePrint)
 
 
-@app.put('/item')
-def update_item():
-    
-    id = request.args.get('id')
-    if id == None:
-        return {"message":"Given id not found"}, 404
-        
 
-    if id in items.keys():
-        request_data = request.get_json()
-        if "name" not in request_data or "price" not in request_data:
-            return {"message":"'name' and 'price' must be included in body"}, 400
-        items[id] =  request.get_json()
-        return {'message': "Item updated successfully"}
-    return {'message': " Item Not Found"}, 404
-
-
-@app.delete('/item')     
-def delete_item():
-    id = request.args.get('id')
-    if id == None:
-        return {"message":"Given id not found"}, 404
-    if id in items.keys():
-        del items[id]
-        return {'message': 'Item deleted successfully'}
-    return {'message': "Record doesn't exist"}, 404
