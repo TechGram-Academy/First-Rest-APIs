@@ -3,6 +3,7 @@ import uuid
 from db import items
 from flask.views import MethodView
 from flask_smorest import Blueprint
+from schemas import ItemSchema
 
 blp = Blueprint("Items", __name__, description="Operations on items")
 
@@ -18,22 +19,18 @@ class Item(MethodView):
         except KeyError:
             return {'message': "Record doesn't exist"}, 404 
 
-    def put(self):
+    @blp.arguments(ItemSchema)
+    def put(self, request_data):
         id = request.args.get('id')
         if id == None:
             return {"message":"Given id not found"}, 404 
         if id in items.keys():
-            request_data = request.get_json()
-            if "name" not in request_data or "price" not in request_data:
-                return {"message":"'name' and 'price' must be included in body"}, 400
-            items[id] =  request.get_json()
+            items[id] =  request_data
             return {'message': "Item updated successfully"}
         return {'message': " Item Not Found"}, 404
 
-    def post(self):
-        request_data = request.get_json()
-        if "name" not in request_data or "price" not in request_data:
-            return {"message":"'name' and 'price' must be included in body"}, 400
+    @blp.arguments(ItemSchema)
+    def post(self, request_data):
         items[uuid.uuid4().hex] = request_data
         return {"message": "Item added succesfully"}, 201
 
